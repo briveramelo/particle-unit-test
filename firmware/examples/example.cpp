@@ -1,4 +1,4 @@
-#include "unit-test/unit-test.h"
+#include "unit-test.h"
 
 /**
  * Demonstrates a simple test that passes and one that fails.

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+\rm electron_firm* ;
+
+particle compile electron --target 0.6.0 \
+	example.cpp \
+	../unit-test.h ../unit-test.cpp \
+	../utility/FakeStream.h \
+	../utility/FakeStreamBuffer.h \
+	../utility/FreeMemory.h \
+;
+
+stty -f /dev/tty.usbmodem14241 14400 ;
+
+particle flash --usb electron_firm* ;
