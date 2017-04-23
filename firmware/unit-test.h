@@ -24,35 +24,37 @@
 */
 
 #ifndef strcpy_P
-#define strcpy_P strcpy
+    #define strcpy_P strcpy
 #endif
 
 #ifndef strlcpy_P
-#define strlcpy_P strncpy
+    #define strlcpy_P strncpy
 #endif
 
 #ifndef sprintf_P
-#define sprintf_P sprintf
+    #define sprintf_P sprintf
 #endif
 
 #ifndef strcmp_P
-#define strcmp_P strcmp
+    #define strcmp_P strcmp
 #endif
 
 #ifndef memcpy_P
-#define memcpy_P memcpy
+    #define memcpy_P memcpy
 #endif
 
 #ifndef vsnprintf_P
-#define vsnprintf_P vsnprintf
+    #define vsnprintf_P vsnprintf
 #endif
+
 #ifndef PROGMEM
-#define PROGMEM
+    #define PROGMEM
 #endif
 
 #ifndef PSTR
-#define PSTR
+    #define PSTR
 #endif
+
 
 
 enum RunnerState {
@@ -604,37 +606,6 @@ THE SOFTWARE.
 
 #include <stdint.h>
 
-#if ARDUINO >= 100 && ARDUINO < 103
-    #undef F
-    #undef PSTR
-    #define PSTR(s) (__extension__({static const char __c[] PROGMEM = (s); &__c[0];}))
-
-    #define F(string_literal) (reinterpret_cast<const __FlashStringHelper *>(PSTR(string_literal)))
-#endif
-
-#if defined(__GNUC__) && (__GNUC__*100 + __GNUC_MINOR__ < 407)
-// Workaround for http://gcc.gnu.org/bugzilla/show_bug.cgi?id=34734
-//
-#ifdef PROGMEM
-    #undef PROGMEM
-    #define PROGMEM __attribute__((section(".progmem.data")))
-    #endif
-#endif
-
-// Workaround for Arduino Due
-#if defined(__arm__) && !defined(PROGMEM)
-    #define PROGMEM
-    #define PSTR(s) s
-    #define memcpy_P(a, b, c) memcpy(a, b, c)
-    #define strlen_P(a) strlen(a)
-#endif
-
-/** \brief This is defined to manage the API transition to 2.X */
-#define ARDUINO_UNIT_MAJOR_VERSION 2
-
-/** \brief This is defined to manage the API transition to 2.X */
-#define ARDUINO_UNIT_MINOR_VERSION 0
-
 //
 // These define what you want for output from tests.
 //
@@ -1099,21 +1070,21 @@ void loop() {
 
 #if TEST_VERBOSITY_EXISTS(ASSERTIONS_FAILED) || TEST_VERBOSITY_EXISTS(ASSERTIONS_PASSED)
     if (output) {
-      out->print(F("Assertion "));
-      out->print(ok ? F("passed") : F("failed"));
-      out->print(F(": ("));
+      out->print("Assertion ");
+      out->print(ok ? "passed" : "failed");
+      out->print(": (");
       out->print(lhss);
-      out->print(F("="));
+      out->print("=");
       out->print(lhs);
-      out->print(F(") "));
+      out->print(") ");
       out->print(ops);
-      out->print(F(" ("));
+      out->print(" (");
       out->print(rhss);
-      out->print(F("="));
+      out->print("=");
       out->print(rhs);
-      out->print(F("), file "));
+      out->print("), file ");
       out->print(file);
-      out->print(F(", line "));
+      out->print(", line ");
       out->print(line);
       out->println(".");
     }
@@ -1177,9 +1148,9 @@ template <> bool isMoreOrEqual<const char*>(const char* const &a, const char* co
 
 /** Create a test-once test, usually checked with assertXXXX.
     The test is assumed to pass unless failed or skipped. */
-#define test(name) struct test_ ## name : TestOnce { test_ ## name() : TestOnce(F(#name)) {}; void once(); } test_ ## name ## _instance; void test_ ## name :: once()
+#define test(name) struct test_ ## name : TestOnce { test_ ## name() : TestOnce(#name) {}; void once(); } test_ ## name ## _instance; void test_ ## name :: once()
 
-#define test_f(fixture, name) struct test_ ## name : fixture { test_ ## name() : fixture(F(#name)) {}; void once(); } test_ ## name ## _instance; void test_ ## name :: once()
+#define test_f(fixture, name) struct test_ ## name : fixture { test_ ## name() : fixture(#name) {}; void once(); } test_ ## name ## _instance; void test_ ## name :: once()
 
 
 /** Create an extern reference to a test-once test defined elsewhere.
@@ -1193,7 +1164,7 @@ is in another file (or defined after the assertion on it). */
 
 This is only necessary if you use assertTestXXXX when the test
 is in another file (or defined after the assertion on it). */
-#define testing(name) struct test_ ## name : Test { test_ ## name() : Test(F(#name)) {}; void loop(); } test_ ## name ## _instance; void test_ ## name :: loop()
+#define testing(name) struct test_ ## name : Test { test_ ## name() : Test(#name) {}; void loop(); } test_ ## name ## _instance; void test_ ## name :: loop()
 
 /** Create an extern reference to a test-until-skip-pass-or-fail defined
 elsewhere.  This is only necessary if you use assertTestXXXX when the test
@@ -1201,7 +1172,7 @@ is in another file (or defined after the assertion on it). */
 #define externTesting(name) struct test_ ## name : Test { test_ ## name(); void loop(); }; extern test_##name test_##name##_instance
 
 // helper define for the operators below
-#define assertOp(arg1,op,op_name,arg2) if (!Test::assertion<typeof(arg2)>(F(__FILE__),__LINE__,F(#arg1),(arg1),F(op_name),op,F(#arg2),(arg2))) return;
+#define assertOp(arg1,op,op_name,arg2) if (!Test::assertion<typeof(arg2)>(__FILE__,__LINE__,#arg1,(arg1),op_name,op,#arg2,(arg2))) return;
 
 /** macro generates optional output and calls fail() followed by a return if false. */
 #define assertEqual(arg1,arg2)       assertOp(arg1,isEqual,"==",arg2)
@@ -1401,33 +1372,33 @@ void Test::resolve()
     output = output || (fail && TEST_VERBOSITY(TESTS_FAILED));
 
     if (output) {
-      out->print(F("Test "));
+      out->print("Test ");
       out->print(name);
 #if TEST_VERBOSITY_EXISTS(TESTS_SKIPPED)
-      if (skip) out->println(F(" skipped."));
+      if (skip) out->println(" skipped.");
 #endif
 
 #if TEST_VERBOSITY_EXISTS(TESTS_PASSED)
-      if (pass) out->println(F(" passed."));
+      if (pass) out->println(" passed.");
 #endif
 
 #if TEST_VERBOSITY_EXISTS(TESTS_FAILED)
-      if (fail) out->println(F(" failed."));
+      if (fail) out->println(" failed.");
 #endif
     }
 #endif
   }
 #if TEST_VERBOSITY_EXISTS(TESTS_SUMMARY)
   if (root == 0 && TEST_VERBOSITY(TESTS_SUMMARY)) {
-    out->print(F("Test summary: "));
+    out->print("Test summary: ");
     out->print(passed);
-    out->print(F(" passed, "));
+    out->print(" passed, ");
     out->print(failed);
-    out->print(F(" failed, and "));
+    out->print(" failed, and ");
     out->print(skipped);
-    out->print(F(" skipped, out of "));
+    out->print(" skipped, out of ");
     out->print(count);
-    out->println(F(" test(s)."));
+    out->println(" test(s).");
   }  
 #endif
 }
