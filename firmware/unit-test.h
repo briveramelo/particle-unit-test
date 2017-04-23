@@ -1,4 +1,6 @@
 #pragma once
+#include "application.h"
+
 /**
  * Copyright 2014  Matthew McGowan
  *
@@ -25,11 +27,11 @@
 #define strcpy_P strcpy
 #endif
 
-#ifndef stricpy_P
+#ifndef strlcpy_P
 #define strlcpy_P strncpy
 #endif
 
-#ifdef sprintf_P
+#ifndef sprintf_P
 #define sprintf_P sprintf
 #endif
 
@@ -109,7 +111,7 @@ public:
             const char* stateName = nameForState((RunnerState)_state);
             if (isStarted())
                 updateLEDStatus();
-            Spark.publish("state", stateName);
+            Particle.publish("state", stateName);
         }
     }
     
@@ -603,29 +605,28 @@ THE SOFTWARE.
 #include <stdint.h>
 
 #if ARDUINO >= 100 && ARDUINO < 103
-#undef F
-#undef PSTR
-#define PSTR(s) (__extension__({static const char __c[] PROGMEM = (s); &__c[0];}))
+    #undef F
+    #undef PSTR
+    #define PSTR(s) (__extension__({static const char __c[] PROGMEM = (s); &__c[0];}))
 
-#define F(string_literal) (reinterpret_cast<const __FlashStringHelper *>(PSTR(string_literal)))
-
+    #define F(string_literal) (reinterpret_cast<const __FlashStringHelper *>(PSTR(string_literal)))
 #endif
 
 #if defined(__GNUC__) && (__GNUC__*100 + __GNUC_MINOR__ < 407)
 // Workaround for http://gcc.gnu.org/bugzilla/show_bug.cgi?id=34734
 //
 #ifdef PROGMEM
-#undef PROGMEM
-#define PROGMEM __attribute__((section(".progmem.data")))
-#endif
+    #undef PROGMEM
+    #define PROGMEM __attribute__((section(".progmem.data")))
+    #endif
 #endif
 
 // Workaround for Arduino Due
 #if defined(__arm__) && !defined(PROGMEM)
-#define PROGMEM
-#define PSTR(s) s
-#define memcpy_P(a, b, c) memcpy(a, b, c)
-#define strlen_P(a) strlen(a)
+    #define PROGMEM
+    #define PSTR(s) s
+    #define memcpy_P(a, b, c) memcpy(a, b, c)
+    #define strlen_P(a) strlen(a)
 #endif
 
 /** \brief This is defined to manage the API transition to 2.X */
@@ -1636,11 +1637,11 @@ int testCmd(String arg) {
 }
 
 void SparkTestRunner::begin() {    
-    Spark.variable("passed", &Test::passed, INT);
-    Spark.variable("failed", &Test::failed, INT);
-    Spark.variable("skipped", &Test::skipped, INT);
-    Spark.variable("count", &Test::count, INT);
-    Spark.variable("state", &_state, INT);
-    Spark.function("cmd", testCmd);
+    Particle.variable("passed", &Test::passed, INT);
+    Particle.variable("failed", &Test::failed, INT);
+    Particle.variable("skipped", &Test::skipped, INT);
+    Particle.variable("count", &Test::count, INT);
+    Particle.variable("state", &_state, INT);
+    Particle.function("cmd", testCmd);
     setState(WAITING);
 }
