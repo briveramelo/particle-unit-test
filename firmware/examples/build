@@ -2,7 +2,7 @@
 
 \rm electron_firm* ;
 
-particle compile electron --target 0.6.0 \
+particle compile electron --target 0.6.1 \
 	example.cpp \
 	../unit-test.h ../unit-test.cpp \
 	../utility/FakeStream.h \
