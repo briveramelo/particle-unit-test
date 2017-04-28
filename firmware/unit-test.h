@@ -1,4 +1,5 @@
-#pragma once
+#ifndef UNIT_TEST_H
+#define UNIT_TEST_H
 #include "application.h"
 
 /**
@@ -1616,3 +1617,5 @@ void SparkTestRunner::begin() {
     Particle.function("cmd", testCmd);
     setState(WAITING);
 }
+
+#endif
