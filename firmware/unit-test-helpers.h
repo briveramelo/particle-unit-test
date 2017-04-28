@@ -5,58 +5,57 @@
 #ifdef FLASHEE_EEPROM
 #include "flashee-eeprom.h"
 
-typedef void (*BufferFullCallback)();
+  typedef void (*BufferFullCallback)();
 
-class CircularBufferPrint : public Print {
-  Flashee::CircularBuffer& buffer;
-  BufferFullCallback callback;
-public:
+  class CircularBufferPrint : public Print {
+    Flashee::CircularBuffer& buffer;
+    BufferFullCallback callback;
+  public:
 
-  CircularBufferPrint(Flashee::CircularBuffer& _buffer, BufferFullCallback _callback)
-  : buffer(_buffer), callback(_callback) {}
+    CircularBufferPrint(Flashee::CircularBuffer& _buffer, BufferFullCallback _callback)
+    : buffer(_buffer), callback(_callback) {}
 
-  virtual size_t write(uint8_t w) {
-    return write(&w, 1);
-  }
-
-  virtual size_t write(const uint8_t *data, size_t size) {
-        // all or nothing write. Here we are assuming the buffer is much larger than
-        // individual writes, and that the callback will help flush the buffer.
-    while (!buffer.write(data, size)) {
-      callback();
+    virtual size_t write(uint8_t w) {
+      return write(&w, 1);
     }
-    return size;
-  }
 
-};
+    virtual size_t write(const uint8_t *data, size_t size) {
+          // all or nothing write. Here we are assuming the buffer is much larger than
+          // individual writes, and that the callback will help flush the buffer.
+      while (!buffer.write(data, size)) {
+        callback();
+      }
+      return size;
+    }
+
+  };
+
+  /**
+   * A tee - allows print output to be directed to two places at once.
+   */
+  class PrintTee : public Print {
+    Print& p1;
+    Print& p2;
+
+  public:
+
+    PrintTee(Print& _p1, Print& _p2) :
+    p1(_p1), p2(_p2) {}
+
+    virtual size_t write(uint8_t w) {
+      p1.write(w);
+      p2.write(w);
+      return 1;
+    }
+
+    virtual size_t write(const uint8_t *buffer, size_t size) {
+      p1.write(buffer, size);
+      p2.write(buffer, size);
+      return size;
+    }
+  };
+
 #endif
-
-/**
- * A tee - allows print output to be directed to two places at once.
- */
-class PrintTee : public Print {
-  Print& p1;
-  Print& p2;
-
-public:
-
-  PrintTee(Print& _p1, Print& _p2) :
-  p1(_p1), p2(_p2) {}
-
-  virtual size_t write(uint8_t w) {
-    p1.write(w);
-    p2.write(w);
-    return 1;
-  }
-
-  virtual size_t write(const uint8_t *buffer, size_t size) {
-    p1.write(buffer, size);
-    p2.write(buffer, size);
-    return size;
-  }
-};
-
-
 
 SparkTestRunner _runner;
 
@@ -64,8 +63,8 @@ bool requestStart = false;
 bool _enterDFU = false;
 
 #ifdef FLASHEE_EEPROM
-Flashee::CircularBuffer* cblog;
-PrintTee* tee;
+  Flashee::CircularBuffer* cblog;
+  PrintTee* tee;
 #endif
 
 uint8_t buf[601];
