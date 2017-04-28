@@ -5,11 +5,13 @@
 particle compile electron --target 0.6.1 \
 	example.cpp \
 	../unit-test.h ../unit-test.cpp \
-	../utility/FakeStream.h \
-	../utility/FakeStreamBuffer.h \
-	../utility/FreeMemory.h \
+	../ParticleFunbag.h \
+	../FakeStream.h ../FakeStream.cpp \
+	../FakeStreamBuffer.h ../FakeStreamBuffer.cpp \
+	../flashee-eeprom-impl.h \
+	../flashee-eeprom.h ../flashee-eeprom.cpp \
 ;
 
-stty -f /dev/tty.usbmodem14241 14400 ;
+stty -f /dev/tty.usbmodem142* 14400 ;
 
 particle flash --usb electron_firm* ;

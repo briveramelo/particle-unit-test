@@ -1,4 +1,3 @@
-#include "application.h"
 #include "unit-test.h"
 
 const uint8_t Test::UNSETUP = 0;
@@ -11,11 +10,11 @@ Test::TestString::TestString(const char *_data) : data((uint32_t)_data) {}
 
 void Test::TestString::read(void *destination, uint16_t offset, uint8_t length) const
 {
-    memcpy(destination,(char*)(data+offset),length);
+  memcpy(destination,(char*)(data+offset),length);
 }
 
 uint16_t Test::TestString::length() const {
-    return strlen((char*)(data));
+  return strlen((char*)(data));
 }
 
 int8_t Test::TestString::compare(const Test::TestString &to) const
@@ -37,7 +36,7 @@ int8_t Test::TestString::compare(const Test::TestString &to) const
 }
 
 size_t Test::TestString::printTo(Print &p) const {
-    return p.print((char*)data);
+  return p.print((char*)data);
 }
 
 bool Test::TestString::matches(const char *pattern) const {
@@ -57,127 +56,127 @@ bool Test::TestString::matches(const char *pattern) const {
   state0[0]=1;
   for (k=1; pattern[k-1] == '*'; ++k) state0[k/8] |= (1 << (k%8));
 
-  for (int i=0; i<=ns; ++i) {
-    if ((i%sizeof(buffer)) == 0) {
-      uint8_t n=sizeof(buffer);
-      if (ns+1-i < n) n=ns+1-i;
-      read(buffer,i,n);
-    }
-    uint8_t c=buffer[i%sizeof(buffer)];
+    for (int i=0; i<=ns; ++i) {
+      if ((i%sizeof(buffer)) == 0) {
+        uint8_t n=sizeof(buffer);
+        if (ns+1-i < n) n=ns+1-i;
+        read(buffer,i,n);
+      }
+      uint8_t c=buffer[i%sizeof(buffer)];
 
-    memset(state1,0,nb);
-    for (int j=0; j<=np; ++j) {
-      if (state0[j/8] & (1 << (j%8))) {
-        if (pattern[j] == '*') {
-          k=j;
-          state1[k/8] |= (1 << (k%8));
-          ++k;
-          state1[k/8] |= (1 << (k%8));
-        } else if (pattern[j] == c) {
-          k=j+1;
-          state1[k/8] |= (1 << (k%8));
-          while (pattern[k] == '*') {
+      memset(state1,0,nb);
+      for (int j=0; j<=np; ++j) {
+        if (state0[j/8] & (1 << (j%8))) {
+          if (pattern[j] == '*') {
+            k=j;
+            state1[k/8] |= (1 << (k%8));
             ++k;
             state1[k/8] |= (1 << (k%8));
+          } else if (pattern[j] == c) {
+            k=j+1;
+            state1[k/8] |= (1 << (k%8));
+            while (pattern[k] == '*') {
+              ++k;
+              state1[k/8] |= (1 << (k%8));
+            }
           }
         }
       }
+
+      uint8_t *tmp = state0;
+      state0 = state1;
+      state1 = tmp;
     }
 
-    uint8_t *tmp = state0;
-    state0 = state1;
-    state1 = tmp;
+    k=np+1;
+    return (state0[k/8]&(1<<(k%8))) != 0;
   }
 
-  k=np+1;
-  return (state0[k/8]&(1<<(k%8))) != 0;
-}
+  Test* Test::root = 0;
+  Test* Test::current = 0;
 
-Test* Test::root = 0;
-Test* Test::current = 0;
+  uint32_t Test::count = 0;
+  uint32_t Test::passed = 0;
+  uint32_t Test::failed = 0;
+  uint32_t Test::skipped = 0;
+  uint8_t Test::max_verbosity = TEST_VERBOSITY_ALL;
+  uint8_t Test::min_verbosity = TEST_VERBOSITY_TESTS_SUMMARY;
 
-uint32_t Test::count = 0;
-uint32_t Test::passed = 0;
-uint32_t Test::failed = 0;
-uint32_t Test::skipped = 0;
-uint8_t Test::max_verbosity = TEST_VERBOSITY_ALL;
-uint8_t Test::min_verbosity = TEST_VERBOSITY_TESTS_SUMMARY;
+  Print* Test::out = &Serial;
 
-Print* Test::out = &Serial;
+  void Test::resolve()
+  {
+    bool pass = current->state==DONE_PASS;
+    bool fail = current->state==DONE_FAIL;
+    bool skip = current->state==DONE_SKIP;
+    bool done = (pass || fail || skip);
 
-void Test::resolve()
-{
-  bool pass = current->state==DONE_PASS;
-  bool fail = current->state==DONE_FAIL;
-  bool skip = current->state==DONE_SKIP;
-  bool done = (pass || fail || skip);
+    if (done) {
+      if (pass) ++Test::passed;
+      if (fail) ++Test::failed;
+      if (skip) ++Test::skipped;
 
-  if (done) {
-    if (pass) ++Test::passed;
-    if (fail) ++Test::failed;
-    if (skip) ++Test::skipped;
-
-    _runner.testDone();
+      _runner.testDone();
 
 #if TEST_VERBOSITY_EXISTS(TESTS_SKIPPED) || TEST_VERBOSITY_EXISTS(TESTS_PASSED) || TEST_VERBOSITY_EXISTS(TESTS_FAILED)
 
-    bool output = false;
+      bool output = false;
 
-    output = output || (skip && TEST_VERBOSITY(TESTS_SKIPPED));
-    output = output || (pass && TEST_VERBOSITY(TESTS_PASSED));
-    output = output || (fail && TEST_VERBOSITY(TESTS_FAILED));
+      output = output || (skip && TEST_VERBOSITY(TESTS_SKIPPED));
+      output = output || (pass && TEST_VERBOSITY(TESTS_PASSED));
+      output = output || (fail && TEST_VERBOSITY(TESTS_FAILED));
 
-    if (output) {
-      out->print(F("Test "));
-      out->print(name);
+      if (output) {
+        out->print(F("Test "));
+        out->print(name);
 #if TEST_VERBOSITY_EXISTS(TESTS_SKIPPED)
-      if (skip) out->println(F(" skipped."));
+        if (skip) out->println(F(" skipped."));
 #endif
 
 #if TEST_VERBOSITY_EXISTS(TESTS_PASSED)
-      if (pass) out->println(F(" passed."));
+        if (pass) out->println(F(" passed."));
 #endif
 
 #if TEST_VERBOSITY_EXISTS(TESTS_FAILED)
-      if (fail) out->println(F(" failed."));
+        if (fail) out->println(F(" failed."));
+#endif
+      }
 #endif
     }
-#endif
-  }
 #if TEST_VERBOSITY_EXISTS(TESTS_SUMMARY)
-  if (root == 0 && TEST_VERBOSITY(TESTS_SUMMARY)) {
-    out->print(F("Test summary: "));
-    out->print(passed);
-    out->print(F(" passed, "));
-    out->print(failed);
-    out->print(F(" failed, and "));
-    out->print(skipped);
-    out->print(F(" skipped, out of "));
-    out->print(count);
-    out->println(F(" test(s)."));
-  }
+    if (root == 0 && TEST_VERBOSITY(TESTS_SUMMARY)) {
+      out->print(F("Test summary: "));
+      out->print(passed);
+      out->print(F(" passed, "));
+      out->print(failed);
+      out->print(F(" failed, and "));
+      out->print(skipped);
+      out->print(F(" skipped, out of "));
+      out->print(count);
+      out->println(F(" test(s)."));
+    }
 #endif
-}
+  }
 
-void Test::remove()
-{
-  for (Test **p = &root; *p != 0; p=&((*p)->next)) {
-    if (*p == this) {
-      *p = (*p)->next;
-      break;
+  void Test::remove()
+  {
+    for (Test **p = &root; *p != 0; p=&((*p)->next)) {
+      if (*p == this) {
+        *p = (*p)->next;
+        break;
+      }
     }
   }
-}
 
-Test::Test(const char *_name, uint8_t _verbosity)
+  Test::Test(const char *_name, uint8_t _verbosity)
   : name(_name), verbosity(_verbosity)
-{
-  insert();
-}
+  {
+    insert();
+  }
 
-void Test::insert()
-{
-  state = UNSETUP;
+  void Test::insert()
+  {
+    state = UNSETUP;
   { // keep list sorted
     Test **p = &Test::root;
     while ((*p) != 0) {

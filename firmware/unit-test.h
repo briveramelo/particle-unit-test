@@ -21,87 +21,88 @@
  header.
 */
 
+#include "application.h"
 #include "FakeStream.h"
 #include "FakeStreamBuffer.h"
 
 enum RunnerState {
-    INIT,
-    WAITING,
-    RUNNING,
-    COMPLETE
+  INIT,
+  WAITING,
+  RUNNING,
+  COMPLETE
 };
 
 class SparkTestRunner {
 
 private:
-    int _state;
+  int _state;
 
 public:
-    SparkTestRunner() : _state(INIT) {
+  SparkTestRunner() : _state(INIT) {
 
+  }
+
+  void begin();
+
+  bool isStarted() {
+    return _state>=RUNNING;
+  }
+
+  bool isComplete() {
+    return _state==COMPLETE;
+  }
+
+  void start() {
+    if (!isStarted())
+      setState(RUNNING);
+  }
+
+  const char* nameForState(RunnerState state) {
+    switch (state) {
+      case INIT: return "init";
+      case WAITING: return "waiting";
+      case RUNNING: return "running";
+      case COMPLETE: return "complete";
+      default:
+      return "";
     }
+  }
 
-    void begin();
+  int testStatusColor();
 
-    bool isStarted() {
-        return _state>=RUNNING;
-    }
+  void updateLEDStatus() {
+    int rgb = testStatusColor();
+    RGB.control(true);
+    RGB.color(rgb);
+  }
 
-    bool isComplete() {
-        return _state==COMPLETE;
-    }
+  RunnerState state() const { return (RunnerState)_state; }
 
-    void start() {
-        if (!isStarted())
-            setState(RUNNING);
-    }
-
-    const char* nameForState(RunnerState state) {
-        switch (state) {
-            case INIT: return "init";
-            case WAITING: return "waiting";
-            case RUNNING: return "running";
-            case COMPLETE: return "complete";
-            default:
-                return "";
-        }
-    }
-
-    int testStatusColor();
-
-    void updateLEDStatus() {
-        int rgb = testStatusColor();
-        RGB.control(true);
-        RGB.color(rgb);
-    }
-
-    RunnerState state() const { return (RunnerState)_state; }
-
-    void setState(RunnerState newState) {
-        if (newState!=_state) {
-            _state = newState;
-            const char* stateName = nameForState((RunnerState)_state);
-            if (isStarted())
-                updateLEDStatus();
-            Particle.publish("state", stateName);
-        }
-    }
-
-    void testDone() {
+  void setState(RunnerState newState) {
+    if (newState!=_state) {
+      _state = newState;
+      const char* stateName = nameForState((RunnerState)_state);
+      if (isStarted())
         updateLEDStatus();
+      Particle.publish("state", stateName);
     }
+  }
+
+  void testDone() {
+    updateLEDStatus();
+  }
 };
 
 extern SparkTestRunner _runner;
 
 #define UNIT_TEST_SETUP() \
-    void setup() { unit_test_setup(); }
+void setup() { unit_test_setup(); }
 
 #define UNIT_TEST_LOOP() \
-    void loop() { unit_test_loop(); }
+void loop() { unit_test_loop(); }
 
 #define UNIT_TEST_APP() \
-    UNIT_TEST_SETUP(); UNIT_TEST_LOOP();
+UNIT_TEST_SETUP(); UNIT_TEST_LOOP();
 
 
 /*
@@ -444,9 +445,9 @@ Variables you might want to adjust:
 */
 class Test
 {
-    friend class SparkTestRunner;
+  friend class SparkTestRunner;
 
- private:
+private:
   // allows for both ram/progmem based names
   class TestString : public Printable {
   public:
@@ -459,7 +460,7 @@ class Test
     bool matches(const char *pattern) const;
   };
 
- private:
+private:
   // linked list structure for active tests
   static Test* root;
   Test *next;
@@ -474,7 +475,7 @@ class Test
   void remove();
   void insert();
 
- public:
+public:
 
   /** After the compile-time-mask TEST_MAX_VERBOSITY, this is a global
       run-time-mask of what output should be generated.
@@ -609,16 +610,16 @@ wildcard (*) pattern like,
 
 This should be done inside your setup() function.
   */
-static unsigned exclude(const char *pattern);
+  static unsigned exclude(const char *pattern);
 
 
 /**
  * invoke a lambda for all tests
  */
 template <typename T> static void for_each(T& t) {
-	  for (Test *p = root; p != nullptr; p=p->next) {
-		  t(*p);
-	  }
+  for (Test *p = root; p != nullptr; p=p->next) {
+    t(*p);
+  }
 }
 
 bool is_enabled() { return this->state==UNSETUP; }
@@ -651,63 +652,63 @@ void loop() {
   Test::run();
 }
   */
-  static void run();
+static void run();
 
   // Construct a test with a given name and verbosity level
 
-  Test(const char *_name, uint8_t _verbosity = TEST_VERBOSITY_TESTS_ALL|TEST_VERBOSITY_ASSERTIONS_FAILED);
+Test(const char *_name, uint8_t _verbosity = TEST_VERBOSITY_TESTS_ALL|TEST_VERBOSITY_ASSERTIONS_FAILED);
 
-  virtual ~Test();
+virtual ~Test();
 
   template <typename T>
-    static bool assertion(const char *file, uint16_t line, const char *lhss, const T& lhs, const char *ops, bool (*op)(const T& lhs, const T& rhs), const char *rhss, const T& rhs) {
-    bool ok = op(lhs,rhs);
-    bool output = false;
+static bool assertion(const char *file, uint16_t line, const char *lhss, const T& lhs, const char *ops, bool (*op)(const T& lhs, const T& rhs), const char *rhss, const T& rhs) {
+  bool ok = op(lhs,rhs);
+  bool output = false;
 
-    if ((!ok) && (current != 0)) current->fail();
+  if ((!ok) && (current != 0)) current->fail();
 
 #if TEST_VERBOSITY_EXISTS(ASSERTIONS_PASSED)
-    if (ok && TEST_VERBOSITY(ASSERTIONS_PASSED)) {
-      output = true;
-    }
+  if (ok && TEST_VERBOSITY(ASSERTIONS_PASSED)) {
+    output = true;
+  }
 #endif
 
 #if TEST_VERBOSITY_EXISTS(ASSERTIONS_FAILED)
-    if ((!ok) && TEST_VERBOSITY(ASSERTIONS_FAILED)) {
-      output = true;
-    }
+  if ((!ok) && TEST_VERBOSITY(ASSERTIONS_FAILED)) {
+    output = true;
+  }
 #endif
 
 #if TEST_VERBOSITY_EXISTS(ASSERTIONS_FAILED) || TEST_VERBOSITY_EXISTS(ASSERTIONS_PASSED)
-    if (output) {
-      out->print(F("Assertion "));
-      out->print(ok ? F("passed") : F("failed"));
-      out->print(F(": ("));
-      out->print(lhss);
-      out->print(F("="));
-      out->print(lhs);
-      out->print(F(") "));
-      out->print(ops);
-      out->print(F(" ("));
-      out->print(rhss);
-      out->print(F("="));
-      out->print(rhs);
-      out->print(F("), file "));
-      out->print(file);
-      out->print(F(", line "));
-      out->print(line);
-      out->println(".");
-    }
-#endif
-    return ok;
+  if (output) {
+    out->print("Assertion ");
+    out->print(ok ? "passed" : "failed");
+    out->print(": (");
+    out->print(lhss);
+    out->print("=");
+    out->print(lhs);
+    out->print(") ");
+    out->print(ops);
+    out->print(" (");
+    out->print(rhss);
+    out->print("=");
+    out->print(rhs);
+    out->print("), file ");
+    out->print(file);
+    out->print(", line ");
+    out->print(line);
+    out->println(".");
   }
+#endif
+  return ok;
+}
 };
 
 /** Class for creating a once-only test.  Test::run() on such a test
     calls Test::setup() once, and (if not already resolved from the
     setup(), calls Test::once() */
 class TestOnce : public Test {
- public:
+public:
   TestOnce(const char *name);
   void loop();
   virtual void once() = 0;
