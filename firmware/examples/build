@@ -3,7 +3,7 @@
 \rm electron_firm* ;
 
 particle compile electron --target 0.6.1 \
-	example.cpp \
+	runner.cpp example_01.cpp example_02.cpp \
 	../unit-test.h ../unit-test.cpp \
 	../unit-test-helpers.h \
 	../FakeStream.h ../FakeStream.cpp \

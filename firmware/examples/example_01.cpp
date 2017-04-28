@@ -18,14 +18,3 @@ test(bad)
   int y=3;
   assertNotEqual(x,y);
 }
-
-test(gottaBeKidding) {
-	int i = 3*2;
-	assertMoreOrEqual(i, 42);
-}
-
-test(HelloWorld) {
-	assertNotEqual("Hello", "World");
-}
-
-UNIT_TEST_APP()
