@@ -19,18 +19,55 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-#pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "application.h"
+#include "unit-test.h"
 
-// FreeMemory function based on code posted here:
-// http://www.arduino.cc/cgi-bin/yabb2/YaBB.pl?num=1213583720/15
-// 
-// Extended by Matthew Murdoch to include walking of the free list.
-int freeMemory();
-
-#ifdef  __cplusplus
+FakeStream::FakeStream() : _nextByte(-1) {
 }
-#endif
+
+FakeStream::~FakeStream() {
+}
+
+size_t FakeStream::write(uint8_t val) {
+    _bytesWritten += (char) val;
+
+    return size_t(1);
+}
+
+void FakeStream::flush() {
+    // does nothing to avoid conflicts (false negative tests)
+    // for test purpose, use 'reset' function instead
+}
+
+void FakeStream::reset() {
+    _bytesWritten="";
+    setToEndOfStream();
+}
+
+const String& FakeStream::bytesWritten() {
+    return _bytesWritten;
+}
+
+void FakeStream::setToEndOfStream() {
+    _nextByte = -1;
+}
+
+void FakeStream::nextByte(byte b) {
+    _nextByte = b;
+}
+
+int FakeStream::available()  {
+    return 1;
+}
+
+int FakeStream::read() {
+    int b = _nextByte;
+        _nextByte = -1;
+    return b;
+}
+
+int FakeStream::peek() {
+    return _nextByte;
+}
+

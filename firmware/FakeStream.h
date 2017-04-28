@@ -21,7 +21,6 @@ THE SOFTWARE.
 */
 #pragma once
 
-#include "Arduino.h"
 
 /**
  * A fake stream which can be used in place of other streams
@@ -39,7 +38,7 @@ public:
 
     /**
      * Destroys this fake stream.
-     */   
+     */
     virtual ~FakeStream();
 
     /**
@@ -47,7 +46,7 @@ public:
      * it to the internal store and can be observed by calling bytesWritten().
      *
      * @param val the byte to write
-     * @return the number of bytes written (always 1)   
+     * @return the number of bytes written (always 1)
      */
     size_t write(uint8_t val);
 
@@ -57,7 +56,7 @@ public:
     void flush();
 
     /**
-     * Reset the FakeStream so that it can be reused across tests. 
+     * Reset the FakeStream so that it can be reused across tests.
      * When called, 'bytesWritten' becomes empty  ("").
      */
     void reset();
@@ -68,12 +67,12 @@ public:
      * @return the bytes written
      */
     const String& bytesWritten();
-    
+
     /**
      * Sets the next value to be read via read() or peek() to -1 (end-of-stream).
      */
     void setToEndOfStream();
-        
+
     /**
      * Sets the value of the next byte to be read via read() or peek().
      *
@@ -91,7 +90,7 @@ public:
     /**
      * Reads a byte, removing it from the stream.
      *
-     * @return the byte passed to nextByte() or -1 (end-of-stream) if 
+     * @return the byte passed to nextByte() or -1 (end-of-stream) if
      *         nextByte() has not been called or setToEndOfStream() has been called
      */
     int read();
@@ -99,7 +98,7 @@ public:
     /**
      * Reads a byte without removing it from the stream.
      *
-     * @return the byte passed to nextByte() or -1 (end-of-stream) if 
+     * @return the byte passed to nextByte() or -1 (end-of-stream) if
      *         nextByte() has not been called or setToEndOfStream() has been called
      */
     int peek();
@@ -108,4 +107,3 @@ private:
     String _bytesWritten;
     int _nextByte;
 };
-

@@ -1,7 +1,4 @@
-#ifndef UNIT_TEST_H
-#define UNIT_TEST_H
-#include "application.h"
-
+#pragma once
 /**
  * Copyright 2014  Matthew McGowan
  *
@@ -24,39 +21,8 @@
  header.
 */
 
-#ifndef strcpy_P
-    #define strcpy_P strcpy
-#endif
-
-#ifndef strlcpy_P
-    #define strlcpy_P strncpy
-#endif
-
-#ifndef sprintf_P
-    #define sprintf_P sprintf
-#endif
-
-#ifndef strcmp_P
-    #define strcmp_P strcmp
-#endif
-
-#ifndef memcpy_P
-    #define memcpy_P memcpy
-#endif
-
-#ifndef vsnprintf_P
-    #define vsnprintf_P vsnprintf
-#endif
-
-#ifndef PROGMEM
-    #define PROGMEM
-#endif
-
-#ifndef PSTR
-    #define PSTR
-#endif
-
-
+#include "FakeStream.h"
+#include "FakeStreamBuffer.h"
 
 enum RunnerState {
     INIT,
@@ -66,26 +32,30 @@ enum RunnerState {
 };
 
 class SparkTestRunner {
-    
+
 private:
     int _state;
-    
+
 public:
     SparkTestRunner() : _state(INIT) {
-        
+
     }
-    
-    void begin();        
-    
+
+    void begin();
+
     bool isStarted() {
         return _state>=RUNNING;
     }
-    
+
+    bool isComplete() {
+        return _state==COMPLETE;
+    }
+
     void start() {
         if (!isStarted())
             setState(RUNNING);
     }
-    
+
     const char* nameForState(RunnerState state) {
         switch (state) {
             case INIT: return "init";
@@ -96,20 +66,19 @@ public:
                 return "";
         }
     }
-        
+
     int testStatusColor();
-    
+
     void updateLEDStatus() {
         int rgb = testStatusColor();
         RGB.control(true);
-        //RGB.color(rgb);
-        LED_SetSignalingColor(rgb);
-        LED_On(LED_RGB);
+        RGB.color(rgb);
     }
-    
+
     RunnerState state() const { return (RunnerState)_state; }
+
     void setState(RunnerState newState) {
-        if (newState!=_state) {            
+        if (newState!=_state) {
             _state = newState;
             const char* stateName = nameForState((RunnerState)_state);
             if (isStarted())
@@ -117,16 +86,13 @@ public:
             Particle.publish("state", stateName);
         }
     }
-    
-    void testDone() {        
+
+    void testDone() {
         updateLEDStatus();
-        delay(500);
     }
 };
 
-SparkTestRunner _runner;
-
-
+extern SparkTestRunner _runner;
 
 #define UNIT_TEST_SETUP() \
     void setup() { unit_test_setup(); }
@@ -160,417 +126,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-/*
-Copyright (c) 2009-2013 Matthew Murdoch
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-*/
-#pragma once
-
-
-/**
- * A fake stream which can be used in place of other streams
- * to inject bytes to be read and to record any bytes written.
- *
- * @author Matthew Murdoch
- */
-class FakeStream : public Stream {
-public:
-    /**
-     * Creates a fake stream. Until nextByte() is called all bytes
-     * returned from read() or peek() will be -1 (end-of-stream).
-     */
-    FakeStream();
-
-    /**
-     * Destroys this fake stream.
-     */
-    virtual ~FakeStream();
-
-    /**
-     * Writes a byte to this stream. The byte is recorded by appending
-     * it to the internal store and can be observed by calling bytesWritten().
-     *
-     * @param val the byte to write
-     * @return the number of bytes written (always 1)
-     */
-    size_t write(uint8_t val);
-
-    /**
-     * Flushes this stream. Does nothing in this implementation to avoid conflicts (false negative tests).
-     */
-    void flush();
-
-    /**
-     * Reset the FakeStream so that it can be reused across tests.
-     * When called, 'bytesWritten' becomes empty  ("").
-     */
-    void reset();
-
-    /**
-     * The bytes written by calling write(uint8_t).
-     *
-     * @return the bytes written
-     */
-    const String& bytesWritten();
-
-    /**
-     * Sets the next value to be read via read() or peek() to -1 (end-of-stream).
-     */
-    void setToEndOfStream();
-
-    /**
-     * Sets the value of the next byte to be read via read() or peek().
-     *
-     * @param b the byte value
-     */
-    void nextByte(byte b);
-
-    /**
-     * The number of bytes available to be read.
-     *
-     * @return the number of available bytes (always 1)
-     */
-    int available();
-
-    /**
-     * Reads a byte, removing it from the stream.
-     *
-     * @return the byte passed to nextByte() or -1 (end-of-stream) if
-     *         nextByte() has not been called or setToEndOfStream() has been called
-     */
-    int read();
-
-    /**
-     * Reads a byte without removing it from the stream.
-     *
-     * @return the byte passed to nextByte() or -1 (end-of-stream) if
-     *         nextByte() has not been called or setToEndOfStream() has been called
-     */
-    int peek();
-
-private:
-    String _bytesWritten;
-    int _nextByte;
-};
-
-
-
-
-
-/*
-Copyright (c) 2009-2013 Matthew Murdoch
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-*/
-
-FakeStream::FakeStream() : _nextByte(-1) {
-}
-
-FakeStream::~FakeStream() {
-}
-
-size_t FakeStream::write(uint8_t val) {
-    _bytesWritten += (char) val;
-
-    return size_t(1);
-}
-
-void FakeStream::flush() {
-    // does nothing to avoid conflicts (false negative tests)
-    // for test purpose, use 'reset' function instead
-}
-
-void FakeStream::reset() {
-    _bytesWritten="";
-    setToEndOfStream();
-}
-
-const String& FakeStream::bytesWritten() {
-    return _bytesWritten;
-}
-
-void FakeStream::setToEndOfStream() {
-    _nextByte = -1;
-}
-
-void FakeStream::nextByte(byte b) {
-    _nextByte = b;
-}
-
-int FakeStream::available()  {
-    return 1;
-}
-
-int FakeStream::read() {
-    int b = _nextByte;
-        _nextByte = -1;
-    return b;
-}
-
-int FakeStream::peek() {
-    return _nextByte;
-}
-
-
-
-
-
-struct BufferNode {
-  byte value;
-  BufferNode *next;
-};
-
-/**
- * A fake stream which can be used in place of other streams to inject bytes to
- * be read and to record any bytes written.
- *
- * @author Matthew Paine
- **/
-class FakeStreamBuffer : public FakeStream {
-    public:
-        /**
-         * Creates a fake stream.
-         **/
-        FakeStreamBuffer();
-
-        /**
-         * Destroys this fake stream.
-         **/
-        virtual ~FakeStreamBuffer();
-
-        /**
-         * Reset the FakeStream so that it can be reused across tests.  When called,
-         * 'bytesWritten' becomes empty  ("") and the buffer is reset.
-         **/
-        void reset();
-
-        /**
-         * Pushes an end of stream (-1) to the end of the buffer
-         **/
-        void setToEndOfStream();
-
-        /**
-         * Appends the current buffer of values to be read via read() or peek()
-         *
-         * @param b the byte value
-         **/
-        void nextByte(byte b);
-
-        /**
-         * Appends the current buffer of values to be read via read() or peek()
-         *
-         * @param b the byte value
-         **/
-        void nextBytes(const char *s);
-
-        /**
-         * The number of bytes available to be read.
-         *
-         * @return the number of available bytes
-         **/
-        int available();
-
-        /**
-         * Reads a byte, removing it from the stream.
-         *
-         * @return the next byte in the buffer, or -1 (end-of-stream) if the buffer
-         *         is empty or setToEndOfStream() has been called
-         **/
-        int read();
-
-        /**
-         * Reads a byte without removing it from the stream.
-         *
-         * @return the next byte in the buffer, or -1 (end-of-stream) if the buffer
-         *         is empty or setToEndOfStream() has been called
-         **/
-        int peek();
-
-    private:
-        BufferNode *_firstNode;
-        BufferNode *_lastNode;
-
-        BufferNode* _createNode (byte value);
-        void _appendNode(BufferNode *node);
-        void _pushByte(byte value);
-        BufferNode* _popNode();
-        byte _nextByte();
-        int _getBufferSize();
-        int _getBufferSize(byte stopAt);
-        void _clearBuffer();
-};
-
-
-/*
-Copyright (c) 2014 Matt Paine
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
-
-FakeStreamBuffer::FakeStreamBuffer() : _firstNode(NULL), _lastNode(NULL) {
-}
-
-FakeStreamBuffer::~FakeStreamBuffer() {
-}
-
-void FakeStreamBuffer::reset() {
-    _clearBuffer();
-    FakeStream::reset();
-}
-
-void FakeStreamBuffer::setToEndOfStream() {
-    _pushByte(-1);
-}
-
-void FakeStreamBuffer::nextByte(byte b) {
-    _pushByte(b);
-}
-
-void FakeStreamBuffer::nextBytes(const char *s) {
-    int next = 0;
-    while (s[next] != 0) {
-        nextByte((byte)s[next]);
-        next++;
-    }
-}
-
-int FakeStreamBuffer::available()  {
-    return _getBufferSize(-1);
-}
-
-int FakeStreamBuffer::read() {
-    if (_firstNode != NULL) {
-        int ret = (int)_nextByte();
-        if (ret == 255) {
-            ret = -1;
-        }
-        return ret;
-    }
-    return -1;
-}
-
-int FakeStreamBuffer::peek() {
-  if (_firstNode != 0) {
-    return _firstNode->value;
-  }
-  return -1;
-}
-
-BufferNode* FakeStreamBuffer::_createNode (byte value) {
-    BufferNode *node = (BufferNode*)malloc(sizeof(BufferNode));
-    node->value = value;
-    node->next = NULL;
-    return node;
-}
-
-void FakeStreamBuffer::_appendNode(BufferNode *node) {
-    if (_firstNode == NULL) {
-        // This is the only node!
-        _firstNode = node;
-        _lastNode = node;
-    }
-    else {
-        _lastNode->next = node;
-        _lastNode = node;
-    }
-}
-
-void FakeStreamBuffer::_pushByte (byte value) {
-    BufferNode *node = _createNode (value);
-    _appendNode(node);
-}
-
-BufferNode* FakeStreamBuffer::_popNode() {
-    BufferNode *node = _firstNode;
-    if (node != NULL) {
-        _firstNode = node->next;
-    }
-    return node;
-}
-
-byte FakeStreamBuffer::_nextByte() {
-    byte ret = -1;
-    BufferNode *node = _popNode();
-    if (node != NULL) {
-        ret = node->value;
-        free(node);
-    }
-    return ret;
-}
-
-int FakeStreamBuffer::_getBufferSize () {
-    return _getBufferSize(-1);
-}
-int FakeStreamBuffer::_getBufferSize (byte stopAt) {
-    int count = 0;
-    BufferNode *node = _firstNode;
-    while (node != 0 && node->value != stopAt) {
-        count++;
-        node = node->next;
-    }
-    return count;
-}
-
-void FakeStreamBuffer::_clearBuffer() {
-    BufferNode *node = _firstNode;
-    BufferNode *nextNode;
-    while (node != 0) {
-        nextNode = node->next;
-        free(node);
-        node = nextNode;
-    }
-    _firstNode = NULL;
-    _lastNode = NULL;
-}
 
 
 /*
@@ -606,6 +162,44 @@ THE SOFTWARE.
 */
 
 #include <stdint.h>
+
+#undef F
+#define F(X) (X)
+
+// Ensure this doesn't ever become an issue!
+#if 0
+#if ARDUINO >= 100 && ARDUINO < 103
+#undef F
+#undef PSTR
+#define PSTR(s) (__extension__({static const char __c[] PROGMEM = (s); &__c[0];}))
+
+#define F(string_literal) (reinterpret_cast<const __FlashStringHelper *>(PSTR(string_literal)))
+
+#endif
+
+#if defined(__GNUC__) && (__GNUC__*100 + __GNUC_MINOR__ < 407)
+// Workaround for http://gcc.gnu.org/bugzilla/show_bug.cgi?id=34734
+//
+#ifdef PROGMEM
+#undef PROGMEM
+#define PROGMEM __attribute__((section(".progmem.data")))
+#endif
+#endif
+
+// Workaround for Arduino Due
+#if defined(__arm__) && !defined(PROGMEM)
+#define PROGMEM
+#define PSTR(s) s
+#define memcpy_P(a, b, c) memcpy(a, b, c)
+#define strlen_P(a) strlen(a)
+#endif
+#endif // Ensure this doesn't ever become an issue!
+
+/** \brief This is defined to manage the API transition to 2.X */
+#define ARDUINO_UNIT_MAJOR_VERSION 2
+
+/** \brief This is defined to manage the API transition to 2.X */
+#define ARDUINO_UNIT_MINOR_VERSION 0
 
 //
 // These define what you want for output from tests.
@@ -851,7 +445,7 @@ Variables you might want to adjust:
 class Test
 {
     friend class SparkTestRunner;
-    
+
  private:
   // allows for both ram/progmem based names
   class TestString : public Printable {
@@ -1005,7 +599,7 @@ class Test
 
   This should be done inside your setup() function.
   */
-  static void include(const char *pattern);
+  static unsigned include(const char *pattern);
 
   /**
 exclude (skip) currently included tests that match some
@@ -1015,7 +609,22 @@ wildcard (*) pattern like,
 
 This should be done inside your setup() function.
   */
-static void exclude(const char *pattern);
+static unsigned exclude(const char *pattern);
+
+
+/**
+ * invoke a lambda for all tests
+ */
+template <typename T> static void for_each(T& t) {
+	  for (Test *p = root; p != nullptr; p=p->next) {
+		  t(*p);
+	  }
+}
+
+bool is_enabled() { return this->state==UNSETUP; }
+
+TestString get_name() const { return name; }
+
 
 /**
 
@@ -1071,21 +680,21 @@ void loop() {
 
 #if TEST_VERBOSITY_EXISTS(ASSERTIONS_FAILED) || TEST_VERBOSITY_EXISTS(ASSERTIONS_PASSED)
     if (output) {
-      out->print("Assertion ");
-      out->print(ok ? "passed" : "failed");
-      out->print(": (");
+      out->print(F("Assertion "));
+      out->print(ok ? F("passed") : F("failed"));
+      out->print(F(": ("));
       out->print(lhss);
-      out->print("=");
+      out->print(F("="));
       out->print(lhs);
-      out->print(") ");
+      out->print(F(") "));
       out->print(ops);
-      out->print(" (");
+      out->print(F(" ("));
       out->print(rhss);
-      out->print("=");
+      out->print(F("="));
       out->print(rhs);
-      out->print("), file ");
+      out->print(F("), file "));
       out->print(file);
-      out->print(", line ");
+      out->print(F(", line "));
       out->print(line);
       out->println(".");
     }
@@ -1149,9 +758,9 @@ template <> bool isMoreOrEqual<const char*>(const char* const &a, const char* co
 
 /** Create a test-once test, usually checked with assertXXXX.
     The test is assumed to pass unless failed or skipped. */
-#define test(name) struct test_ ## name : TestOnce { test_ ## name() : TestOnce(#name) {}; void once(); } test_ ## name ## _instance; void test_ ## name :: once()
+#define test(name) struct test_ ## name : TestOnce { test_ ## name() : TestOnce(F(#name)) {}; void once(); } test_ ## name ## _instance; void test_ ## name :: once()
 
-#define test_f(fixture, name) struct test_ ## name : fixture { test_ ## name() : fixture(#name) {}; void once(); } test_ ## name ## _instance; void test_ ## name :: once()
+#define test_f(fixture, name) struct test_ ## name : fixture { test_ ## name() : fixture(F(#name)) {}; void once(); } test_ ## name ## _instance; void test_ ## name :: once()
 
 
 /** Create an extern reference to a test-once test defined elsewhere.
@@ -1165,7 +774,7 @@ is in another file (or defined after the assertion on it). */
 
 This is only necessary if you use assertTestXXXX when the test
 is in another file (or defined after the assertion on it). */
-#define testing(name) struct test_ ## name : Test { test_ ## name() : Test(#name) {}; void loop(); } test_ ## name ## _instance; void test_ ## name :: loop()
+#define testing(name) struct test_ ## name : Test { test_ ## name() : Test(F(#name)) {}; void loop(); } test_ ## name ## _instance; void test_ ## name :: loop()
 
 /** Create an extern reference to a test-until-skip-pass-or-fail defined
 elsewhere.  This is only necessary if you use assertTestXXXX when the test
@@ -1173,7 +782,7 @@ is in another file (or defined after the assertion on it). */
 #define externTesting(name) struct test_ ## name : Test { test_ ## name(); void loop(); }; extern test_##name test_##name##_instance
 
 // helper define for the operators below
-#define assertOp(arg1,op,op_name,arg2) if (!Test::assertion<typeof(arg2)>(__FILE__,__LINE__,#arg1,(arg1),op_name,op,#arg2,(arg2))) return;
+#define assertOp(arg1,op,op_name,arg2) if (!Test::assertion<typeof(arg2)>(F(__FILE__),__LINE__,F(#arg1),(arg1),F(op_name),op,F(#arg2),(arg2))) return;
 
 /** macro generates optional output and calls fail() followed by a return if false. */
 #define assertEqual(arg1,arg2)       assertOp(arg1,isEqual,"==",arg2)
@@ -1246,376 +855,18 @@ is in another file (or defined after the assertion on it). */
 #define assertTestNotSkip(name) assertNotEqual(test_##name##_instance.state,Test::DONE_SKIP)
 
 
-const uint8_t Test::UNSETUP = 0;
-const uint8_t Test::LOOPING = 1;
-const uint8_t Test::DONE_SKIP = 2;
-const uint8_t Test::DONE_PASS = 3;
-const uint8_t Test::DONE_FAIL = 4;
-
-Test::TestString::TestString(const char *_data) : data((uint32_t)_data) {}
-
-void Test::TestString::read(void *destination, uint16_t offset, uint8_t length) const
-{
-    memcpy(destination,(char*)(data+offset),length);
-}
-
-uint16_t Test::TestString::length() const {
-    return strlen((char*)(data));
-}
-
-int8_t Test::TestString::compare(const Test::TestString &to) const
-{
-  uint8_t a_buf[4],b_buf[4];
-  uint16_t i=0;
-
-  for (;;) {
-    uint8_t j=(i%4);
-    if (j == 0) {
-      this->read(a_buf,i,4);
-      to.read(b_buf,i,4);
-    }
-    if (a_buf[j] < b_buf[j]) return -1;
-    if (a_buf[j] > b_buf[j]) return  1;
-    if (a_buf[j] == 0) return 0;
-    ++i;
-  }
-}
-
-size_t Test::TestString::printTo(Print &p) const {
-    return p.print((char*)data);
-}
-
-bool Test::TestString::matches(const char *pattern) const {
-  uint8_t np = strlen(pattern);
-  uint8_t ns = length();
-  uint8_t nb = (np+2)/8+((np+2)%8 != 0);
-  uint8_t k;
-  uint8_t buffer[8];
-
-  uint8_t buffer0[nb];
-  uint8_t buffer1[nb];
-
-  uint8_t *state0=buffer0;
-  uint8_t *state1=buffer1;
-
-  memset(state0,0,nb);
-  state0[0]=1;
-  for (k=1; pattern[k-1] == '*'; ++k) state0[k/8] |= (1 << (k%8));
-
-  for (int i=0; i<=ns; ++i) {
-    if ((i%sizeof(buffer)) == 0) {
-      uint8_t n=sizeof(buffer);
-      if (ns+1-i < n) n=ns+1-i;
-      read(buffer,i,n);
-    }
-    uint8_t c=buffer[i%sizeof(buffer)];
-
-    memset(state1,0,nb);
-    for (int j=0; j<=np; ++j) {
-      if (state0[j/8] & (1 << (j%8))) {
-        if (pattern[j] == '*') {
-          k=j;
-          state1[k/8] |= (1 << (k%8));
-          ++k;
-          state1[k/8] |= (1 << (k%8));
-        } else if (pattern[j] == c) {
-          k=j+1;
-          state1[k/8] |= (1 << (k%8));
-          while (pattern[k] == '*') {
-            ++k;
-            state1[k/8] |= (1 << (k%8));
-          }
-        }
-      }
-    }
-
-    uint8_t *tmp = state0;
-    state0 = state1;
-    state1 = tmp;
-  }
-
-  k=np+1;
-  return (state0[k/8]&(1<<(k%8))) != 0;
-}
-
-Test* Test::root = 0;
-Test* Test::current = 0;
-
-uint32_t Test::count = 0;
-uint32_t Test::passed = 0;
-uint32_t Test::failed = 0;
-uint32_t Test::skipped = 0;
-uint8_t Test::max_verbosity = TEST_VERBOSITY_ALL;
-uint8_t Test::min_verbosity = TEST_VERBOSITY_TESTS_SUMMARY;
-
-Print* Test::out = &Serial;
-
-void Test::resolve()
-{
-  bool pass = current->state==DONE_PASS;
-  bool fail = current->state==DONE_FAIL;
-  bool skip = current->state==DONE_SKIP;
-  bool done = (pass || fail || skip);
-
-  if (done) {
-    if (pass) ++Test::passed;
-    if (fail) ++Test::failed;
-    if (skip) ++Test::skipped;
-    
-    _runner.testDone();
-
-#if TEST_VERBOSITY_EXISTS(TESTS_SKIPPED) || TEST_VERBOSITY_EXISTS(TESTS_PASSED) || TEST_VERBOSITY_EXISTS(TESTS_FAILED)
-
-    bool output = false;
-
-    output = output || (skip && TEST_VERBOSITY(TESTS_SKIPPED));
-    output = output || (pass && TEST_VERBOSITY(TESTS_PASSED));
-    output = output || (fail && TEST_VERBOSITY(TESTS_FAILED));
-
-    if (output) {
-      out->print("Test ");
-      out->print(name);
-#if TEST_VERBOSITY_EXISTS(TESTS_SKIPPED)
-      if (skip) out->println(" skipped.");
-#endif
-
-#if TEST_VERBOSITY_EXISTS(TESTS_PASSED)
-      if (pass) out->println(" passed.");
-#endif
-
-#if TEST_VERBOSITY_EXISTS(TESTS_FAILED)
-      if (fail) out->println(" failed.");
-#endif
-    }
-#endif
-  }
-#if TEST_VERBOSITY_EXISTS(TESTS_SUMMARY)
-  if (root == 0 && TEST_VERBOSITY(TESTS_SUMMARY)) {
-    out->print("Test summary: ");
-    out->print(passed);
-    out->print(" passed, ");
-    out->print(failed);
-    out->print(" failed, and ");
-    out->print(skipped);
-    out->print(" skipped, out of ");
-    out->print(count);
-    out->println(" test(s).");
-  }  
-#endif
-}
-
-void Test::remove()
-{
-  for (Test **p = &root; *p != 0; p=&((*p)->next)) {
-    if (*p == this) {
-      *p = (*p)->next;
-      break;
-    }
-  }
-}
-
-Test::Test(const char *_name, uint8_t _verbosity)
-  : name(_name), verbosity(_verbosity)
-{
-  insert();
-}
-
-void Test::insert()
-{
-  state = UNSETUP;
-  { // keep list sorted
-    Test **p = &Test::root;
-    while ((*p) != 0) {
-      if (name.compare((*p)->name) <= 0) break;
-      p=&((*p)->next);
-    }
-    next=(*p);
-    (*p)=this;
-  }
-  ++Test::count;
-}
-
-void Test::pass() { state = DONE_PASS; }
-void Test::fail() { state = DONE_FAIL; }
-void Test::skip() { state = DONE_SKIP; }
-
-void Test::setup() {};
-
-void Test::run()
-{
-  _runner.setState(root ? RUNNING : COMPLETE);
-  
-  for (Test **p = &root; (*p) != 0; ) {
-    current = *p;
-
-    if (current->state == LOOPING) {
-      current->loop();
-    } else if (current->state == UNSETUP) {
-      current->setup();
-      if (current->state == UNSETUP) {
-        current->state = LOOPING;
-      }
-    }
-
-    if (current->state != LOOPING) {
-      (*p)=((*p)->next);
-      current->resolve();
-    } else {
-      p=&((*p)->next);
-    }
-    break;  // allow main loop to execute
-  }
-}
-
-Test::~Test()
-{
-  remove();
-}
-
-void Test::include(const char *pattern)
-{
-  for (Test *p = root; p != 0; p=p->next) {
-    if (p->state == DONE_SKIP && p->name.matches(pattern)) {
-      p->state = UNSETUP;
-    }
-  }
-}
-
-void Test::exclude(const char *pattern)
-{
-  for (Test *p = root; p != 0; p=p->next) {
-    if (p->state == UNSETUP && p->name.matches(pattern)) {
-      p->state = DONE_SKIP;
-    }
-  }
-}
-
-TestOnce::TestOnce(const char *name) : Test(name) {}
-
-void TestOnce::loop()
-{
-  once();
-  if (state == LOOPING) state = DONE_PASS;
-}
-
-template <>
-bool isLess<const char*>(const char* const &a, const char* const &b)
-{
-  return (strcmp(a,b) < 0);
-}
-
-template <>
-bool isLessOrEqual<const char*>(const char* const &a, const char* const &b)
-{
-  return (strcmp(a,b) <= 0);
-}
-
-template <>
-bool isEqual<const char*>(const char* const &a, const char* const &b)
-{
-  return (strcmp(a,b) == 0);
-}
-
-template <>
-bool isNotEqual<const char*>(const char* const &a, const char* const &b)
-{
-  return (strcmp(a,b) != 0);
-}
-
-template <>
-bool isMoreOrEqual<const char*>(const char* const &a, const char* const &b)
-{
-  return (strcmp(a,b) >= 0);
-}
-
-template <>
-bool isMore<const char*>(const char* const &a, const char* const &b)
-{
-  return (strcmp(a,b) > 0);
-}
-
 /**
  * A convenience method to setup serial.
  */
-void unit_test_setup()
-{
-    Serial.begin(9600);
-    _runner.begin();
-}
-
-bool requestStart = false;
-bool _enterDFU = false;
-
-bool isStartRequested(bool runImmediately) {
-    if (runImmediately || requestStart)
-        return true;
-    if (Serial.available()) {
-        char c = Serial.read();
-        if (c=='t') {
-            return true;
-        }
-    }
-    
-    return false;
-}
-
+void unit_test_setup();
 /*
  * A convenience method to run tests as part of the main loop after a character
  * is received over serial.
+ *
+ * @param runImmediately    When true, the test runner is started on first call to this function.
+ *  Otherwise the test runner is only started when an external start signal is received.
+ * @param
  **/
-void unit_test_loop(bool runImmediately=false)
-{       
-    if (_enterDFU)
-        System.dfu();
-    
-    if (!_runner.isStarted() && isStartRequested(runImmediately)) {
-        Serial.println("Running tests");
-        _runner.start();
-    }
-    
-    if (_runner.isStarted()) {
-        Test::run();
-    }
-}
+void unit_test_loop(bool runImmediately=false, bool runTest=true);
 
-int SparkTestRunner::testStatusColor() {
-    if (Test::failed>0)
-        return RGB_COLOR_RED;
-    else if (Test::skipped>0)
-        return RGB_COLOR_ORANGE;
-    else
-        return RGB_COLOR_GREEN;
-}
-
-int testCmd(String arg) {
-    int result = 0;
-    if (arg.equals("start")) {
-        requestStart = true;
-    }
-    else if (arg.startsWith("exclude=")) {
-        String pattern = arg.substring(8);
-        Test::exclude(pattern.c_str());
-    }
-    else if (arg.startsWith("include=")) {
-        String pattern = arg.substring(8);
-        Test::include(pattern.c_str());
-    }
-    else if (arg.equals("enterDFU")) {
-        _enterDFU = true;
-    }
-    else 
-        result = -1;
-    return result;
-}
-
-void SparkTestRunner::begin() {    
-    Particle.variable("passed", &Test::passed, INT);
-    Particle.variable("failed", &Test::failed, INT);
-    Particle.variable("skipped", &Test::skipped, INT);
-    Particle.variable("count", &Test::count, INT);
-    Particle.variable("state", &_state, INT);
-    Particle.function("cmd", testCmd);
-    setState(WAITING);
-}
-
-#endif
+int testCmd(String arg);
