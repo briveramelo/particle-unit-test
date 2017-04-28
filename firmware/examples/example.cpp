@@ -1,4 +1,3 @@
-#include "ParticleFunbag.h"
 #include "unit-test.h"
 
 /**

@@ -1,5 +1,7 @@
 #include "unit-test.h"
 
+#include "ParticleFunbag.h"
+
 const uint8_t Test::UNSETUP = 0;
 const uint8_t Test::LOOPING = 1;
 const uint8_t Test::DONE_SKIP = 2;
