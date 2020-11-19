@@ -1,11 +1,12 @@
-This is a port of the [Arduino Unit](https://github.com/mmurdoch/arduinounit) library to the spark. 
+This is a port of the [Arduino Unit](https://github.com/mmurdoch/arduinounit) library to the particle. 
 Please see that repo for library usage, or check out the examples.
 
-Additions in the spark version:
+Additions in the particle version:
 
 - when running, the RGB led indicates the overall test health
 - configuration at runtime of tests to include or exclude, via `cmd(include=pattern)`
 - waits to run tests until either 't' is received over serial, or the Cloud `cmd` function is called with 'start'
+- see the following about sending via serial https://docs.particle.io/tutorials/learn-more/about-serial/
 - test stats (passed/failed/skipped/count) available as cloud variables 
 - test running state (waiting, running, complete) available as a variable, 
 and changes to running state are published as events.
@@ -16,7 +17,7 @@ RGB Led
 -------
 
 When the test suite app executes, it initially enters the waiting state. 
-The RGB led shows the usual breathing cyan as the spark is connected to the cloud.
+The RGB led shows the usual breathing cyan as the particle is connected to the cloud.
 
 When the test suite is later started, the RGB led shows a solid color to reflect
 the current test health:
@@ -25,7 +26,7 @@ the current test health:
  - orange: some tests skipped but otherwise all passed
  - red: some tests failed
 
-When the test suite has completed running, the LED status remains so you can leave the spark
+When the test suite has completed running, the LED status remains so you can leave the particle
 running and come back when it's done to see the result.
 (In future, the LED may blink while the tests are running, and then return to solid when all tests are done, 
 to make it easy to see when the tests are still running or not.)
@@ -40,14 +41,14 @@ feature is described in the [Arduino unit documentation](https://github.com/mmur
 To exclude tests ending "*_slow":
 
 ```
-spark call mycore cmd exclude=*_slow
+particle call mycore cmd exclude=*_slow
 ```
 
 To run only tests starting with 'abc':
 
 ```
-spark call mycore cmd exclude=*
-spark call mycore cmd include=abc*
+particle call mycore cmd exclude=*
+particle call mycore cmd include=abc*
 ```
 
 
@@ -61,7 +62,7 @@ will wait until:
 
 E.g. to start the tests via the cloud:
 
- `spark call mycore cmd start`
+ `particle call mycore cmd start`
 
 
 Enter DFU Mode
@@ -71,7 +72,7 @@ put the core in DFU mode for quick flashing of another app.
 
 This is done with the command
 
- `spark call mycore cmd enterDFU`
+ `particle call mycore cmd enterDFU`
 
 On receiving the command, the core will reset and enter DFU mode (flashing yellow LED.)
 
